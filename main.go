@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	couch "github.com/tleyden/go-couch"
 )
@@ -28,10 +29,11 @@ func main() {
 
 	for _, arg := range args {
 		if fileInfo, err := os.Stat(arg); err == nil {
+			// TODO: use goroutines to load data faster (limited by maxfiles?)
 			if fileInfo.IsDir() {
 				dir, err := os.Open(arg)
 				if err != nil {
-					fmt.Println(err)
+					fmt.Printf("Error: %v\n", err)
 				}
 				defer dir.Close()
 
@@ -40,27 +42,28 @@ func main() {
 					fmt.Println(err)
 				}
 				for _, filename := range filenames {
-					loadJSON(db, dir.Name()+"/"+filename)
+					loadJSON(db, filepath.Join(dir.Name(), filename))
 				}
 			} else {
 				loadJSON(db, arg)
 			}
 		} else {
-			fmt.Printf("Error: \"%v\" - no such file or directory exists!\n", arg)
+			fmt.Printf("Error (%v): no such file or directory exists!\n", arg)
 		}
 	}
 }
 
 func loadJSON(db couch.Database, filename string) {
+	baseName := filepath.Base(filename)
 	file, err := ioutil.ReadFile(filename)
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Printf("Error (%v): %v\n", baseName, err)
 	}
 
 	var document interface{}
 	err = json.Unmarshal(file, &document)
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Printf("Error (%v): %v\n", baseName, err)
 	} else {
 		db.Insert(document)
 	}
