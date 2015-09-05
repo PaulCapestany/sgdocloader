@@ -11,18 +11,36 @@ import (
 	couch "github.com/tleyden/go-couch"
 )
 
+var (
+	nodeAddress = flag.String("n", "http://127.0.0.1:4984", "Sync Gateway node address")
+	bucket      = flag.String("b", "mybucket", "The name of the bucket")
+	useBulkDocs = flag.Bool("k", false, "Use _bulk_docs")
+)
+
+// TODO: use same flags and offer same capabilities as `cbdocloader` - http://docs.couchbase.com/admin/admin/CLI/cbdocloader_tool.html
+// --------------------------------------------------------------------------------------
+// Usage: cbdocloader [options] <directory>|zipfile
+//
+// Example: cbdocloader -u Administrator -p password -n 127.0.0.1:8091 -b mybucket -s 100 gamesim-sample.zip
+//
+// Options:
+//   -h, --help         show this help message and exit
+//   -u Administrator   Username
+//   -p password        Password
+//   -b mybucket        Bucket
+//   -n 127.0.0.1:8091  Node address
+//   -s 100             RAM quota in MB
+
 func main() {
-	url := flag.String("u", "http://127.0.0.1:4984", "Sync Gateway URL")
-	bucketname := flag.String("b", "mybucket", "The name of the bucket")
 	flag.Parse()
 	args := flag.Args()
 
 	if len(args) < 1 {
-		fmt.Println("Usage: sgdocloader -u http://127.0.0.1:4984 -b mybucket [files and/or directories]")
+		fmt.Println("Usage: sgdocloader -n http://127.0.0.1:4984 -b mybucket [files and/or directories]")
 		os.Exit(1)
 	}
 
-	db, err := couch.Connect(*url + "/" + *bucketname)
+	db, err := couch.Connect(*nodeAddress + "/" + *bucket)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -65,6 +83,17 @@ func loadJSON(db couch.Database, filename string) {
 	if err != nil {
 		fmt.Printf("Error (%v): %v\n", baseName, err)
 	} else {
-		db.Insert(document)
+		if docs, ok := document.(map[string]interface{})["docs"].([]interface{}); ok && *useBulkDocs {
+			_, err := db.Bulk(docs)
+			if err != nil {
+				fmt.Printf("Error (%v): %v\n", baseName, err)
+			}
+		} else {
+			// id, rev, err := db.Insert(document)
+			_, _, err := db.Insert(document)
+			if err != nil {
+				fmt.Printf("Error (%v): %v\n", baseName, err)
+			}
+		}
 	}
 }
