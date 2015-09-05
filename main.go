@@ -12,9 +12,10 @@ import (
 )
 
 var (
-	nodeAddress = flag.String("n", "http://127.0.0.1:4984", "Sync Gateway node address")
-	bucket      = flag.String("b", "mybucket", "The name of the bucket")
-	useBulkDocs = flag.Bool("k", false, "Use _bulk_docs")
+	nodeAddress     = flag.String("n", "http://127.0.0.1:4984", "Sync Gateway node address")
+	bucket          = flag.String("b", "mybucket", "The name of the bucket")
+	useBulkDocs     = flag.Bool("k", false, "Use _bulk_docs")
+	recursiveSearch = flag.Bool("r", false, "Recursively search subdirectories for documents to add")
 )
 
 // TODO: use same flags and offer same capabilities as `cbdocloader` - http://docs.couchbase.com/admin/admin/CLI/cbdocloader_tool.html
@@ -40,12 +41,27 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, err := couch.Connect(*nodeAddress + "/" + *bucket)
-	if err != nil {
-		fmt.Println(err)
-	}
+	// db, err := couch.Connect(*nodeAddress + "/" + *bucket)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	recursiveFileSlice := []string{}
+
+	// args =
 
 	for _, arg := range args {
+		if *recursiveSearch {
+			err := filepath.Walk(arg, func(path string, f os.FileInfo, err error) error {
+				if !f.IsDir() {
+					recursiveFileSlice = append(recursiveFileSlice, path)
+				}
+				return nil
+			})
+			if err != nil {
+				fmt.Printf("Error (%v): no such file or directory exists!\n", arg)
+			}
+		}
+
 		if fileInfo, err := os.Stat(arg); err == nil {
 			// TODO: use goroutines to load data faster (limited by maxfiles?)
 			if fileInfo.IsDir() {
