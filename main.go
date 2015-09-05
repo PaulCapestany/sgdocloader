@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/davecgh/go-spew/spew"
 	couch "github.com/tleyden/go-couch"
 )
 
@@ -105,19 +106,31 @@ func loadJSON(db couch.Database, filename string) {
 	var document interface{}
 	err = json.Unmarshal(file, &document)
 	if err != nil {
-		fmt.Printf("Error (%v): %v\n", baseName, err)
+		fmt.Printf("0Error (%v): %v\n", baseName, err)
 	} else {
-		if docs, ok := document.(map[string]interface{})["docs"].([]interface{}); ok && *useBulkDocs {
-			_, err := db.Bulk(docs)
-			if err != nil {
-				fmt.Printf("Error (%v): %v\n", baseName, err)
+		fmt.Printf("WTF (%v)\n", baseName)
+
+		// TODO: need a better way of determining type…
+		switch typeSwitch := document.(type) {
+		case map[string]interface{}:
+			fmt.Println("map[string]interface{}")
+			// spew.Dump(typeSwitch)
+			if docs, ok := document.(map[string]interface{})["docs"].([]interface{}); ok && *useBulkDocs {
+				_, err := db.Bulk(docs)
+				if err != nil {
+					fmt.Printf("1Error (%v): %v\n", baseName, err)
+				}
+			} else {
+				// id, rev, err := db.Insert(document)
+				_, _, err := db.Insert(document)
+				if err != nil {
+					fmt.Printf("2Error (%v): %v\n", baseName, err)
+				}
 			}
-		} else {
-			// id, rev, err := db.Insert(document)
-			_, _, err := db.Insert(document)
-			if err != nil {
-				fmt.Printf("Error (%v): %v\n", baseName, err)
-			}
+		default:
+			fmt.Println("default")
+			spew.Dump(typeSwitch)
 		}
+
 	}
 }
