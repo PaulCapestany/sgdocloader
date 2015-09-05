@@ -1,10 +1,12 @@
 # sgdocloader
-_sgdocloader_ is a CLI tool that makes it easy to add JSON documents to a [Sync Gateway](https://github.com/couchbase/sync_gateway/) instance.
+_sgdocloader_ is a command line tool that makes it easy to add JSON documents to a [Sync Gateway](https://github.com/couchbase/sync_gateway/) node.
 
 ## Installation
-You can grab [pre-built binaries for Windows, OS X, and Linux](https://github.com/PaulCapestany/sgdocloader/releases/) and drop them anywhere in your _$PATH_ and you should be set.
+You can download [pre-built binaries for Windows, OS X, and Linux](https://github.com/PaulCapestany/sgdocloader/releases/) and place them anywhere in your _$PATH_ and you should be set.
 
-If you prefer to build from source (and already have Go installed):
+If you prefer to build from source (and already have [Go installed][dee70c8e]):
+
+  [dee70c8e]: https://golang.org/doc/install "Install Golang"
 
 `go get github.com/paulcapestany/sgdocloader`
 
