@@ -34,22 +34,22 @@ var (
 
 func main() {
 	flag.Parse()
-	args := flag.Args()
+	fileOrDirSlice := flag.Args()
 
-	if len(args) < 1 {
+	if len(fileOrDirSlice) < 1 {
 		fmt.Println("Usage: sgdocloader -n http://127.0.0.1:4984 -b mybucket [files and/or directories]")
 		os.Exit(1)
 	}
 
-	// db, err := couch.Connect(*nodeAddress + "/" + *bucket)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	recursiveFileSlice := []string{}
+	db, err := couch.Connect(*nodeAddress + "/" + *bucket)
+	if err != nil {
+		fmt.Println(err)
+	}
 
-	// args =
+	var recursiveFileSlice []string
 
-	for _, arg := range args {
+	// fileOrDirSlice =
+	for _, arg := range fileOrDirSlice {
 		if *recursiveSearch {
 			err := filepath.Walk(arg, func(path string, f os.FileInfo, err error) error {
 				if !f.IsDir() {
@@ -60,11 +60,19 @@ func main() {
 			if err != nil {
 				fmt.Printf("Error (%v): no such file or directory exists!\n", arg)
 			}
+			// arg = append(arg, recursiveFileSlice)
 		}
+	}
+
+	for _, thing := range recursiveFileSlice {
+		fileOrDirSlice = append(fileOrDirSlice, thing)
+	}
+
+	for _, arg := range fileOrDirSlice {
 
 		if fileInfo, err := os.Stat(arg); err == nil {
 			// TODO: use goroutines to load data faster (limited by maxfiles?)
-			if fileInfo.IsDir() {
+			if fileInfo.IsDir() && !*recursiveSearch {
 				dir, err := os.Open(arg)
 				if err != nil {
 					fmt.Printf("Error: %v\n", err)
